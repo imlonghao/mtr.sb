@@ -621,6 +621,7 @@ func main() {
 	})
 
 	router := gin.Default()
+	router.RemoteIPHeaders = []string{"X-Real-IP"}
 	api := router.Group("/api")
 
 	api.GET("/ping", mw, pingHandler)
