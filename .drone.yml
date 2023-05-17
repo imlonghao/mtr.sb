@@ -22,7 +22,35 @@ steps:
         - main
       event:
         - push
-  - name: worker
+---
+kind: pipeline
+type: docker
+name: release
+steps:
+  - name: tag
+    image: alpine
+    commands:
+      - apk add git
+      - printf "r%s.%s,latest" "$(git rev-list --count HEAD)" "$(git rev-parse --short=7 HEAD)" > .tags
+  - name: build
+    image: golang:1.20.4
+    commands:
+      - ./build.sh worker
+    when:
+      event: tag
+  - name: gitea_release
+    image: plugins/gitea-release
+    settings:
+      api_key:
+        from_secret: GITEA_BOT_TOKEN
+      base_url: https://git.esd.cc
+      files:
+        - dist/worker
+      checksum:
+        - sha256
+    when:
+      event: tag
+  - name: docker_image
     image: plugins/docker
     settings:
       registry: git.esd.cc
@@ -32,7 +60,4 @@ steps:
       repo: git.esd.cc/imlonghao/mtr.sb-worker
       dockerfile: Dockerfile.worker
     when:
-      branch:
-        - main
-      event:
-        - push
+      event: tag

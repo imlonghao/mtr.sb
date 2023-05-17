@@ -1,8 +1,3 @@
-FROM golang:1.20.4 AS builder
-WORKDIR /app
-ADD . .
-RUN ./build.sh worker
-
 FROM ubuntu
 WORKDIR /app
 RUN apt update && apt install -y --no-install-recommends iputils-ping traceroute mtr-tiny && rm -rf /var/lib/apt/lists/*
@@ -12,4 +7,4 @@ RUN chmod +x /tini
 EXPOSE 50051
 ENTRYPOINT ["/tini", "--"]
 CMD ["/app/worker"]
-COPY --from=builder /app/dist/worker ./
+ADD dist/worker ./
