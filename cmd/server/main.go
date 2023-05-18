@@ -527,7 +527,10 @@ func initServerList() {
 	if err != nil {
 		log.Fatalf("tls.LoadX509KeyPair err: %v", err)
 	}
-	certPool := x509.NewCertPool()
+	certPool, err := x509.SystemCertPool()
+	if err != nil {
+		log.Fatalf("x509.SystemCertPool err: %v", err)
+	}
 	for _, caPath := range viper.GetStringSlice("worker_ca_path") {
 		ca, err := os.ReadFile(caPath)
 		if err != nil {
