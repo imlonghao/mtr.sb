@@ -34,13 +34,15 @@ type Result struct {
 }
 
 type Server struct {
-	Name     string
-	Provider string
-	Country  string
-	Location string
-	AffLink  string
-	Url      string                  `json:"-"`
-	Conn     proto.MtrSbWorkerClient `json:"-"`
+	Name      string
+	Provider  string
+	Country   string
+	Location  string
+	AffLink   string
+	Latitude  float64
+	Longitude float64
+	Url       string                  `json:"-"`
+	Conn      proto.MtrSbWorkerClient `json:"-"`
 }
 
 type IPGeo struct {
@@ -521,6 +523,18 @@ func getParam(m map[string]interface{}, k string) string {
 	}
 }
 
+func getParamFloat(m map[string]interface{}, k string) float64 {
+	if s, ok := m[k]; ok {
+		if f, ok := s.(float64); ok {
+			return f
+		} else {
+			return 0
+		}
+	} else {
+		return 0
+	}
+}
+
 func initServerList() {
 	serverList = make(map[string]*Server)
 	cert, err := tls.LoadX509KeyPair(viper.GetString("cert_path"), viper.GetString("key_path"))
@@ -547,13 +561,15 @@ func initServerList() {
 	nodes := viper.Get("nodes").([]map[string]interface{})
 	for _, node := range nodes {
 		n := Server{
-			Name:     getParam(node, "name"),
-			Provider: getParam(node, "provider"),
-			Country:  getParam(node, "country"),
-			Location: getParam(node, "location"),
-			AffLink:  getParam(node, "aff"),
-			Url:      getParam(node, "url"),
-			Conn:     nil,
+			Name:      getParam(node, "name"),
+			Provider:  getParam(node, "provider"),
+			Country:   getParam(node, "country"),
+			Location:  getParam(node, "location"),
+			AffLink:   getParam(node, "aff"),
+			Url:       getParam(node, "url"),
+			Latitude:  getParamFloat(node, "lat"),
+			Longitude: getParamFloat(node, "lon"),
+			Conn:      nil,
 		}
 		conn, err := grpc.Dial(n.Url, grpc.WithTransportCredentials(c))
 		if err != nil {
