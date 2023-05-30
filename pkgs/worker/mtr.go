@@ -79,6 +79,8 @@ END:
 		}
 	}
 
+	cmd.Wait()
+
 	fmt.Println("done")
 	return nil
 }
