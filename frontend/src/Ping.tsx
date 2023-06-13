@@ -1,5 +1,5 @@
 import React, {ReactNode, useEffect, useState} from "react";
-import {Button, Checkbox, Col, Form, Input, Row, Select, Table} from "antd";
+import {Button, Checkbox, Col, Form, Input, message, Row, Select, Table} from "antd";
 import {ColumnsType} from "antd/es/table";
 import {PingResponse} from "../../proto/mtrsb";
 import {useOutletContext, useSearchParams} from "react-router-dom";
@@ -174,6 +174,7 @@ export default function Ping() {
   const [rd, setRd] = useState(searchParams.get("rd") === null ? "1" : searchParams.get("rd"));
   const [start, setStart] = useState(false);
   const [getIP, serverList] = useOutletContext() as [(ip: string) => ipGeo, serverMap];
+  const [messageApi] = message.useMessage();
 
   useEffect(() => {
     if (!start || target === "") {
@@ -195,13 +196,17 @@ export default function Ping() {
       })
     };
     sse.onerror = () => {
+      messageApi.open({
+        type: 'error',
+        content: 'Failed to connect to server, maybe being rate limited',
+      });
       setStart(false)
     }
     return () => {
       sse.close()
       setStart(false)
     }
-  }, [start, target, protocol, rd]);
+  }, [start, target, protocol, rd, messageApi]);
 
   let tableData = () => {
     let r: PingTable[] = []

@@ -1,5 +1,5 @@
 import React, {useEffect, useState} from "react";
-import {Button, Checkbox, Col, Form, Input, Row, Select, Table} from "antd";
+import {Button, Checkbox, Col, Form, Input, message, Row, Select, Table} from "antd";
 import {ColumnsType} from "antd/es/table";
 import {useOutletContext, useSearchParams} from "react-router-dom";
 import {ipGeo, serverMap, serverStruct} from "./Root";
@@ -63,6 +63,7 @@ export default function Traceroute() {
   const [start, setStart] = useState(false);
   const [getIP, serverList] = useOutletContext() as [(ip: string) => ipGeo, serverMap];
   const [resolvedIP, setResolvedIP] = useState("N/A");
+  const [messageApi] = message.useMessage();
 
   useEffect(() => {
     if (!start || target === "") {
@@ -108,13 +109,17 @@ export default function Traceroute() {
       }
     };
     sse.onerror = () => {
+      messageApi.open({
+        type: 'error',
+        content: 'Failed to connect to server, maybe being rate limited',
+      });
       setStart(false)
     }
     return () => {
       sse.close()
       setStart(false)
     }
-  }, [node, start, target, protocol, rd]);
+  }, [node, start, target, protocol, rd, messageApi]);
 
   const tableData = () => {
     const r: TracerouteTable[] = []
