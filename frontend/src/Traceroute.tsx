@@ -63,7 +63,7 @@ export default function Traceroute() {
   const [start, setStart] = useState(false);
   const [getIP, serverList] = useOutletContext() as [(ip: string) => ipGeo, serverMap];
   const [resolvedIP, setResolvedIP] = useState("N/A");
-  const [messageApi] = message.useMessage();
+  const [messageApi, contextHolder] = message.useMessage();
 
   useEffect(() => {
     if (!start || target === "") {
@@ -143,6 +143,7 @@ export default function Traceroute() {
   }
 
   return <>
+    {contextHolder}
     <h1>Traceroute</h1>
     <Form form={form}>
       <Row gutter={16}>

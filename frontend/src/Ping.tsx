@@ -174,7 +174,7 @@ export default function Ping() {
   const [rd, setRd] = useState(searchParams.get("rd") === null ? "1" : searchParams.get("rd"));
   const [start, setStart] = useState(false);
   const [getIP, serverList] = useOutletContext() as [(ip: string) => ipGeo, serverMap];
-  const [messageApi] = message.useMessage();
+  const [messageApi, contextHolder] = message.useMessage();
 
   useEffect(() => {
     if (!start || target === "") {
@@ -250,6 +250,7 @@ export default function Ping() {
   }
 
   return <>
+    {contextHolder}
     <h1>Ping</h1>
     <Form form={form}>
       <Row gutter={16}>

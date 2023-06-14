@@ -119,7 +119,7 @@ export default function Mtr() {
   const [start, setStart] = useState(false);
   const [getIP, serverList] = useOutletContext() as [(ip: string) => ipGeo, serverMap];
   const [resolvedIP, setResolvedIP] = useState("N/A");
-  const [messageApi] = message.useMessage();
+  const [messageApi, contextHolder] = message.useMessage();
 
   useEffect(() => {
     if (!start || target === "") {
@@ -246,6 +246,7 @@ export default function Mtr() {
   }
 
   return <>
+    {contextHolder}
     <h1>Mtr</h1>
     <Form form={form}>
       <Row gutter={16}>
