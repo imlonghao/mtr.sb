@@ -287,7 +287,7 @@ export default function Mtr() {
             }}/>
           </Form.Item>
         </Col>
-        <Col xs={6} sm={10} lg={5}>
+        <Col xs={12} sm={10} lg={5}>
           <Form.Item label="Protocol" name="Protocol" initialValue={protocol}>
             <Select>
               <Option value="0">Auto</Option>
@@ -296,19 +296,19 @@ export default function Mtr() {
             </Select>
           </Form.Item>
         </Col>
-        <Col xs={6} sm={6} lg={3}>
+        <Col xs={12} sm={6} lg={3}>
           <Form.Item name="RD" valuePropName="checked">
             <Checkbox defaultChecked={rd === "1"}>Remote DNS</Checkbox>
           </Form.Item>
         </Col>
-        <Col xs={6} sm={4} lg={2}>
+        <Col xs={12} sm={4} lg={2}>
           <Form.Item>
             <Button type="primary" onClick={() => {
               submit_event()
             }} disabled={start}>Start</Button>
           </Form.Item>
         </Col>
-        <Col xs={6} sm={4} lg={2}>
+        <Col xs={12} sm={4} lg={2}>
           <Form.Item>
             <Button danger type="primary" onClick={() => setStart(false)} disabled={!start}>Stop</Button>
           </Form.Item>

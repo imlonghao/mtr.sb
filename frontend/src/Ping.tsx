@@ -279,7 +279,7 @@ export default function Ping() {
             }}/>
           </Form.Item>
         </Col>
-        <Col xs={24} sm={8} lg={6}>
+        <Col xs={12} sm={8} lg={6}>
           <Form.Item label="Protocol" name="Protocol" initialValue={protocol}>
             <Select>
               <Option value="0">Auto</Option>
@@ -288,7 +288,7 @@ export default function Ping() {
             </Select>
           </Form.Item>
         </Col>
-        <Col xs={24} sm={8} lg={6}>
+        <Col xs={12} sm={8} lg={6}>
           <Form.Item name="RD" valuePropName="checked">
             <Checkbox defaultChecked={rd === "1"}>Remote DNS</Checkbox>
           </Form.Item>
