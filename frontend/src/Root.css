@@ -19,6 +19,13 @@
         padding: 20px 50px;
     }
 }
+
+@media only screen and (max-width: 950px) {
+    header {
+        padding: 0 10px !important;
+    }
+}
+
 body {
     margin: 0 !important;
 }
