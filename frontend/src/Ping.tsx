@@ -249,6 +249,21 @@ export default function Ping() {
     return r
   }
 
+  const submit_event = () => {
+    const _t = form.getFieldValue("Target").trim()
+    const _p = form.getFieldValue("Protocol")
+    const _rd = form.getFieldInstance("RD").input.checked ? "1" : "0"
+    setTarget(_t)
+    setProtocol(_p)
+    setRd(_rd)
+    setStart(true)
+    setSearchParams({
+      t: _t,
+      p: _p,
+      rd: _rd,
+    });
+  }
+
   return <>
     {contextHolder}
     <h1>Ping</h1>
@@ -256,7 +271,12 @@ export default function Ping() {
       <Row gutter={16}>
         <Col xs={24} sm={16} lg={6}>
           <Form.Item label="Target" name="Target" initialValue={target}>
-            <Input placeholder="" />
+            <Input placeholder="" onKeyUp={(event) => {
+              if (event.key !== "Enter" && event.key !== "NumpadEnter") {
+                return
+              }
+              submit_event()
+            }}/>
           </Form.Item>
         </Col>
         <Col xs={24} sm={8} lg={6}>
@@ -276,18 +296,7 @@ export default function Ping() {
         <Col xs={12} sm={8} lg={3}>
           <Form.Item>
             <Button type="primary" onClick={() => {
-              const _t = form.getFieldValue("Target").trim()
-              const _p = form.getFieldValue("Protocol")
-              const _rd = form.getFieldInstance("RD").input.checked ? "1" : "0"
-              setTarget(_t)
-              setProtocol(_p)
-              setRd(_rd)
-              setStart(true)
-              setSearchParams({
-                t: _t,
-                p: _p,
-                rd: _rd,
-              });
+              submit_event()
             }} disabled={start}>Start</Button>
           </Form.Item>
         </Col>

@@ -245,6 +245,26 @@ export default function Mtr() {
     return r
   }
 
+  const submit_event = () => {
+    setResolvedIP("N/A")
+
+    const _n = form.getFieldValue("Node")
+    const _t = form.getFieldValue("Target").trim()
+    const _p = form.getFieldValue("Protocol")
+    const _rd = form.getFieldInstance("RD").input.checked ? "1" : "0"
+    setNode(_n)
+    setTarget(_t)
+    setProtocol(_p)
+    setRd(_rd)
+    setStart(true)
+    setSearchParams({
+      n: _n,
+      t: _t,
+      p: _p,
+      rd: _rd,
+    });
+  }
+
   return <>
     {contextHolder}
     <h1>Mtr</h1>
@@ -259,7 +279,12 @@ export default function Mtr() {
         </Col>
         <Col xs={24} sm={12} lg={6}>
           <Form.Item label="Target" name="Target" initialValue={target}>
-            <Input placeholder="" />
+            <Input placeholder="" onKeyUp={(event) => {
+              if (event.key !== "Enter" && event.key !== "NumpadEnter") {
+                return
+              }
+              submit_event()
+            }}/>
           </Form.Item>
         </Col>
         <Col xs={6} sm={10} lg={5}>
@@ -279,23 +304,7 @@ export default function Mtr() {
         <Col xs={6} sm={4} lg={2}>
           <Form.Item>
             <Button type="primary" onClick={() => {
-              setResolvedIP("N/A")
-
-              const _n = form.getFieldValue("Node")
-              const _t = form.getFieldValue("Target").trim()
-              const _p = form.getFieldValue("Protocol")
-              const _rd = form.getFieldInstance("RD").input.checked ? "1" : "0"
-              setNode(_n)
-              setTarget(_t)
-              setProtocol(_p)
-              setRd(_rd)
-              setStart(true)
-              setSearchParams({
-                n: _n,
-                t: _t,
-                p: _p,
-                rd: _rd,
-              });
+              submit_event()
             }} disabled={start}>Start</Button>
           </Form.Item>
         </Col>
