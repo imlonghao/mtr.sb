@@ -74,10 +74,33 @@ export default function Whois() {
         </Col>
         <Col xs={24} sm={8}>
           <Form.Item label="Server" name="Server" initialValue={server}>
-            <Select>
-              <Option value="">Auto</Option>
-              <Option value="whois.radb.net">RADB</Option>
-              <Option value="rr.ntt.net">NTT</Option>
+            <Select options={[
+              {
+                label: 'Default',
+                options: [
+                  { label: 'Auto', value: '' },
+                  { label: 'BGP.Tools', value: 'bgp.tools' },
+                ],
+              },
+              {
+                label: 'Regional Internet Registry',
+                options: [
+                  { label: 'AFRINIC', value: 'whois.afrinic.net' },
+                  { label: 'ARIN', value: 'whois.arin.net' },
+                  { label: 'APNIC', value: 'whois.apnic.net' },
+                  { label: 'LACNIC', value: 'whois.lacnic.net' },
+                  { label: 'RIPE', value: 'whois.ripe.net' },
+                ],
+              },
+              {
+                label: 'Third-Part Internet Routing Registry',
+                options: [
+                  { label: 'RADB', value: 'whois.radb.net' },
+                  { label: 'NTT', value: 'rr.ntt.net' },
+                  { label: 'AltDB', value: 'whois.altdb.net' },
+                ],
+              },
+            ]}>
             </Select>
           </Form.Item>
         </Col>
