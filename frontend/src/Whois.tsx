@@ -92,11 +92,7 @@ export default function Whois() {
     </Form>
     <hr/>
     <pre>
-      {data
-          .replaceAll("\r\n", "<br/>")
-          .replaceAll("\n", "<br/>")
-          .replaceAll("\r", "<br/>")
-      }
+      {data}
     </pre>
   </>
 }
