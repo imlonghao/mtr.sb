@@ -39,7 +39,7 @@ export default function Whois() {
       setStart(false)
       return
     })
-  }, [start, target, server, messageApi]);
+  }, [start, target, token, server, messageApi]);
 
   const submit_event = () => {
     const _t = form.getFieldValue("Target").trim()
