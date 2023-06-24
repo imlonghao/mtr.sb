@@ -21,7 +21,16 @@ export default function Whois() {
       return
     }
     setData("")
-    fetch(`/api/whois?t=${target}&s=${server}&token=${token}`).then(req => req.json()).then(data => {
+    fetch(`/api/whois?t=${target}&s=${server}&token=${token}`).then(req => {
+      if (req.status === 429) {
+        messageApi.open({
+          type: 'error',
+          content: "Rate limited, please retry in 10 seconds",
+        });
+        throw new Error('Rate limited')
+      }
+      return req.json()
+    }).then(data => {
       ref.current?.reset();
       if (data.ok !== true) {
         messageApi.open({
@@ -37,7 +46,7 @@ export default function Whois() {
       ref.current?.reset();
       messageApi.open({
         type: 'error',
-        content: 'error when requesting API',
+        content: 'Something went wrong',
       });
       setStart(false)
       return
