@@ -542,6 +542,18 @@ func whoisHandler(c *gin.Context) {
 		return
 	}
 
+	whoisServerTrusted := false
+	for _, trustedWhoisServer := range viper.GetStringSlice("trusted_whois_server") {
+		if server == trustedWhoisServer {
+			whoisServerTrusted = true
+			break
+		}
+	}
+	if !whoisServerTrusted {
+		c.JSON(http.StatusForbidden, gin.H{"ok": false, "data": "whois server not trusted"})
+		return
+	}
+
 	result, err := whois.Whois(target, server)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"ok": false, "data": err.Error()})
