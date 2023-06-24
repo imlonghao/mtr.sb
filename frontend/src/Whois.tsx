@@ -91,7 +91,7 @@ export default function Whois() {
       </Row>
     </Form>
     <hr/>
-    <pre>
+    <pre style={{whiteSpace: "pre-wrap"}}>
       {data}
     </pre>
   </>
