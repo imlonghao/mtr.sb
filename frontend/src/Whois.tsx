@@ -1,7 +1,7 @@
 import React, {useEffect, useState} from "react";
 import {Button, Col, Form, Input, message, Row, Select} from "antd";
 import {useSearchParams} from "react-router-dom";
-import {Turnstile} from "@marsidev/react-turnstile";
+import {Turnstile, TurnstileInstance} from "@marsidev/react-turnstile";
 
 const { Option } = Select;
 
@@ -14,6 +14,7 @@ export default function Whois() {
   const [start, setStart] = useState(false);
   const [messageApi, contextHolder] = message.useMessage();
   const [token, setToken] = React.useState("")
+  const ref : React.MutableRefObject<TurnstileInstance|undefined> = React.useRef()
 
   useEffect(() => {
     if (!start || target === "" || token === "") {
@@ -21,6 +22,7 @@ export default function Whois() {
     }
     setData("")
     fetch(`/api/whois?t=${target}&s=${server}&token=${token}`).then(req => req.json()).then(data => {
+      ref.current?.reset();
       if (data.ok !== true) {
         messageApi.open({
           type: 'error',
@@ -32,6 +34,7 @@ export default function Whois() {
       setData(data.data)
       setStart(false)
     }).catch(err => {
+      ref.current?.reset();
       messageApi.open({
         type: 'error',
         content: 'error when requesting API',
@@ -55,7 +58,7 @@ export default function Whois() {
 
   return <>
     {contextHolder}
-    <Turnstile siteKey='0x4AAAAAAAGeiq0TQZ_Hozlv' onSuccess={setToken} style={{display: "none"}}/>
+    <Turnstile ref={ref} siteKey='0x4AAAAAAAGeiq0TQZ_Hozlv' onSuccess={setToken} style={{display: "none"}}/>
     <h1>Whois</h1>
     <Form form={form}>
       <Row gutter={16}>
