@@ -12,12 +12,14 @@ export default function Whois() {
   const [start, setStart] = useState(false);
   const [messageApi, contextHolder] = message.useMessage();
   const [token, setToken] = React.useState("")
+  const [isProcessing, setIsProcessing] = React.useState(false)
   const ref : React.MutableRefObject<TurnstileInstance|undefined> = React.useRef()
 
   useEffect(() => {
-    if (!start || target === "" || token === "") {
+    if (!start || target === "" || token === "" || isProcessing) {
       return
     }
+    setIsProcessing(true)
     setData("")
     const _token = token
     ref.current?.reset()
@@ -44,7 +46,7 @@ export default function Whois() {
         content: 'Something went wrong',
       });
     })
-  }, [start, target, token, server, messageApi]);
+  }, [start, target, token, server, messageApi, isProcessing]);
 
   const submit_event = () => {
     const _t = form.getFieldValue("Target").trim()
@@ -110,7 +112,10 @@ export default function Whois() {
           <Form.Item>
             <Button type="primary" onClick={() => {
               submit_event()
-              setTimeout(() => setStart(false), 10*1000);
+              setTimeout(() => {
+                setStart(false)
+                setIsProcessing(false)
+              }, 10*1000);
             }} disabled={start}>Start</Button>
           </Form.Item>
         </Col>
