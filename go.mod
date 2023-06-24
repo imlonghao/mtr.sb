@@ -8,6 +8,8 @@ require (
 	github.com/gin-gonic/gin v1.9.1
 	github.com/ip2location/ip2location-go/v9 v9.6.0
 	github.com/json-iterator/go v1.1.12
+	github.com/likexian/whois v1.15.0
+	github.com/meyskens/go-turnstile v0.0.0-20230622160222-89160e594ca1
 	github.com/praserx/ipconv v1.2.1
 	github.com/spf13/viper v1.16.0
 	go.uber.org/zap v1.24.0

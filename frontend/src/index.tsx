@@ -8,6 +8,7 @@ import Home from "./Home";
 import Version from "./Version";
 import Traceroute from "./Traceroute";
 import Mtr from "./Mtr";
+import Whois from "./Whois";
 
 const router = createBrowserRouter([
   {
@@ -29,6 +30,10 @@ const router = createBrowserRouter([
       {
         path: "mtr",
         element: <Mtr />,
+      },
+      {
+        path: "whois",
+        element: <Whois />,
       },
       {
         path: "version",

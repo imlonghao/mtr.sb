@@ -13,6 +13,8 @@ import (
 	"github.com/ip2location/ip2location-go/v9"
 	jsoniter "github.com/json-iterator/go"
 	"github.com/json-iterator/go/extra"
+	"github.com/likexian/whois"
+	"github.com/meyskens/go-turnstile"
 	"github.com/spf13/viper"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
@@ -515,6 +517,40 @@ func mtrHandler(c *gin.Context) {
 	})
 }
 
+func whoisHandler(c *gin.Context) {
+	target := c.Query("t")
+	server := c.Query("s")
+	token := c.Query("token")
+
+	ts := turnstile.New(viper.GetString("turnstile_secret"))
+	resp, err := ts.Verify(token, c.ClientIP())
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"ok": false, "data": err.Error()})
+		return
+	}
+
+	verified := false
+	if resp.Success {
+		verified = true
+	}
+
+	z.Info("whois", zap.String("ip", c.ClientIP()), zap.Bool("turnstile", verified),
+		zap.String("target", target), zap.String("server", server))
+
+	if !verified {
+		c.JSON(http.StatusForbidden, gin.H{"ok": false, "data": "turnstile verify code error"})
+		return
+	}
+
+	result, err := whois.Whois(target, server)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"ok": false, "data": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"ok": true, "data": result})
+}
+
 func getParam(m map[string]interface{}, k string) string {
 	if s, ok := m[k]; ok {
 		return s.(string)
@@ -646,6 +682,7 @@ func main() {
 	api.GET("/ping", mw, pingHandler)
 	api.GET("/traceroute", mw, tracerouteHandler)
 	api.GET("/mtr", mw, mtrHandler)
+	api.GET("/whois", mw, whoisHandler)
 
 	api.GET("/servers", serverListHandler)
 	api.GET("/ip", ipHandler)

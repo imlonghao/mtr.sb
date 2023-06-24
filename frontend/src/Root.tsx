@@ -82,6 +82,7 @@ export default function Root() {
           {key: "ping", label: "ping"},
           {key: "traceroute", label: "traceroute"},
           {key: "mtr", label: "mtr"},
+          {key: "whois", label: "whois"},
         ]}
         onClick={(item) => navigate(`/${item.key}`)}
       />
