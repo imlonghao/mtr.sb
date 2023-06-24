@@ -19,7 +19,9 @@ export default function Whois() {
       return
     }
     setData("")
-    fetch(`/api/whois?t=${target}&s=${server}&token=${token}`).then(req => {
+    const _token = token
+    ref.current?.reset()
+    fetch(`/api/whois?t=${target}&s=${server}&token=${_token}`).then(req => {
       if (req.status === 429) {
         messageApi.open({
           type: 'error',
@@ -29,25 +31,18 @@ export default function Whois() {
       }
       return req.json()
     }).then(data => {
-      ref.current?.reset();
       if (data.ok !== true) {
         messageApi.open({
           type: 'error',
           content: data.data,
         });
-        setStart(false)
-        return
       }
       setData(data.data)
-      setStart(false)
     }).catch(err => {
-      ref.current?.reset();
       messageApi.open({
         type: 'error',
         content: 'Something went wrong',
       });
-      setStart(false)
-      return
     })
   }, [start, target, token, server, messageApi]);
 
@@ -115,6 +110,7 @@ export default function Whois() {
           <Form.Item>
             <Button type="primary" onClick={() => {
               submit_event()
+              setTimeout(() => setStart(false), 10*1000);
             }} disabled={start}>Start</Button>
           </Form.Item>
         </Col>
