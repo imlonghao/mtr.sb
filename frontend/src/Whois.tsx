@@ -91,12 +91,12 @@ export default function Whois() {
       </Row>
     </Form>
     <hr/>
-    <code>
+    <pre>
       {data
           .replaceAll("\r\n", "<br/>")
           .replaceAll("\n", "<br/>")
           .replaceAll("\r", "<br/>")
       }
-    </code>
+    </pre>
   </>
 }
