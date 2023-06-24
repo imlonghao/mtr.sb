@@ -3,8 +3,6 @@ import {Button, Col, Form, Input, message, Row, Select} from "antd";
 import {useSearchParams} from "react-router-dom";
 import {Turnstile, TurnstileInstance} from "@marsidev/react-turnstile";
 
-const { Option } = Select;
-
 export default function Whois() {
   let [searchParams, setSearchParams] = useSearchParams();
   const [form] = Form.useForm();
