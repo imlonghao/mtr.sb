@@ -116,7 +116,7 @@ export default function Whois() {
                 setStart(false)
                 setIsProcessing(false)
               }, 10*1000);
-            }} disabled={start}>Start</Button>
+            }} disabled={start || token === ""}>Start</Button>
           </Form.Item>
         </Col>
       </Row>
