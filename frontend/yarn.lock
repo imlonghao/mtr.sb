@@ -1618,9 +1618,9 @@
   integrity sha512-Hcv+nVC0kZnQ3tD9GVu5xSMR4VVYOteQIr/hwFPVEvPdlXqgGEuRjiheChHgdM+JyqdgNcmzZOX/tnl0JOiI7A==
 
 "@marsidev/react-turnstile@^0.2.1":
-  version "0.2.1"
-  resolved "https://registry.yarnpkg.com/@marsidev/react-turnstile/-/react-turnstile-0.2.1.tgz#7e284207c8ee4ca00cb0e6a095c4f6d7ec87ae4a"
-  integrity sha512-W/jxe6nn55wvbAwCOAtrm+tIg90/1oqBlbWwWaWJ2zuo3pmEBoaz3cnkU5PO5Hhi7NL51H46qL1syrkq/5CN0Q==
+  version "0.2.2"
+  resolved "https://registry.yarnpkg.com/@marsidev/react-turnstile/-/react-turnstile-0.2.2.tgz#d8d4b6e3bd2492a9f41652752d061f9a95c8966a"
+  integrity sha512-+cxunPa8a61Uv68k2buLtoIZ2WoZYlpcg7WVLIAetlAAptDbP8DdZduXKr12KluCuKB8ulJMxloxmrqHezyHnA==
 
 "@nicolo-ribaudo/eslint-scope-5-internals@5.1.1-v1":
   version "5.1.1-v1"
