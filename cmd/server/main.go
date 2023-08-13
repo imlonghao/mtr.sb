@@ -123,7 +123,7 @@ func ipHandler(c *gin.Context) {
 	}
 
 	if inWhiteList {
-		results, err := ipio.GetIPInfo(net.IP(ip))
+		results, err := ipio.GetIPInfo(net.ParseIP(ip))
 		if err != nil {
 			c.AbortWithError(http.StatusInternalServerError, err)
 			return
