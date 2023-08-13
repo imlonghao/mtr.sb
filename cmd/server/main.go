@@ -688,6 +688,7 @@ func main() {
 		fmt.Println("Config file changed:", e.Name)
 		initServerList()
 		ipioWhiteList = viper.GetStringSlice("ipinfo_whitelist")
+		fmt.Println("ipioWhiteList", ipioWhiteList)
 	})
 	viper.WatchConfig()
 
@@ -717,6 +718,7 @@ func main() {
 	// ipinfo
 	ipio = ipinfo.NewClient(nil, ipinfo.NewCache(cache.NewInMemory()), viper.GetString("ipinfo_token"))
 	ipioWhiteList = viper.GetStringSlice("ipinfo_whitelist")
+	fmt.Println("ipioWhiteList", ipioWhiteList)
 
 	store := ratelimit.InMemoryStore(&ratelimit.InMemoryOptions{
 		Rate:  time.Second * 10,
