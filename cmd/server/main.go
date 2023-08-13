@@ -93,7 +93,7 @@ func ipHandler(c *gin.Context) {
 	z.Info("ip", zap.String("ip", c.ClientIP()), zap.String("target", ip))
 
 	inWhiteList := false
-	netIP, _ := netip.ParseAddr(ip)
+	netIP, _ := netip.ParseAddr(c.ClientIP())
 	for _, whiteList := range ipioWhiteList {
 		if strings.Contains(whiteList, "/") {
 			thisNet, _ := netip.ParsePrefix(whiteList)
@@ -101,7 +101,7 @@ func ipHandler(c *gin.Context) {
 				continue
 			}
 		} else {
-			if whiteList != ip {
+			if whiteList != c.ClientIP() {
 				continue
 			}
 		}
