@@ -2221,10 +2221,15 @@
   resolved "https://registry.yarnpkg.com/@types/mime/-/mime-3.0.1.tgz#5f8f2bca0a5863cb69bc0b0acd88c96cb1d4ae10"
   integrity sha512-Y4XFY5VJAuw0FgAqPNd6NNoV44jbq9Bz2L7Rh/J6jLTiHBSBJa9fxqQIvkIld4GsoDOcCbvzOUAbLPsSKKg+uA==
 
-"@types/node@*", "@types/node@>=13.7.0":
+"@types/node@*":
   version "20.4.9"
   resolved "https://registry.yarnpkg.com/@types/node/-/node-20.4.9.tgz#c7164e0f8d3f12dfae336af0b1f7fdec8c6b204f"
   integrity sha512-8e2HYcg7ohnTUbHk8focoklEQYvemQmu9M/f43DZVx43kHn0tE3BY/6gSDxS7k0SprtS0NHvj+L80cGLnoOUcQ==
+
+"@types/node@>=13.7.0":
+  version "20.4.10"
+  resolved "https://registry.yarnpkg.com/@types/node/-/node-20.4.10.tgz#73c9480791e3ddeb4887a660fc93a7f59353ad45"
+  integrity sha512-vwzFiiy8Rn6E0MtA13/Cxxgpan/N6UeNYR9oUu6kuJWxu6zCk98trcDp8CBhbtaeuq9SykCmXkFr2lWLoPcvLg==
 
 "@types/node@^18.0.0":
   version "18.17.5"
@@ -9428,9 +9433,9 @@ ts-proto-descriptors@1.15.0:
     protobufjs "^7.2.4"
 
 ts-proto@^1.146.0:
-  version "1.156.2"
-  resolved "https://registry.yarnpkg.com/ts-proto/-/ts-proto-1.156.2.tgz#872e38e73f84f917fef47f35b478af84796a79a3"
-  integrity sha512-0ZAbGmfvB2R79QJfpTIk56T8xM4k9ZS+z77517HDpuFZFizCMceCIE3IhdYQWbmP1oSYLzw0AeVbVHi2PIigKQ==
+  version "1.156.3"
+  resolved "https://registry.yarnpkg.com/ts-proto/-/ts-proto-1.156.3.tgz#c0632c16fdd3e13351217dc22a4dadc6cb490cc3"
+  integrity sha512-KjwFOU4DksA0H2VJI2Ir0pwThq88tXNW+0+P2PVwiOl8D4iXhs8p/nAsZTJllmVr2TTjflbBaX5HHkRgP7XaHQ==
   dependencies:
     case-anything "^2.1.13"
     protobufjs "^7.2.4"
