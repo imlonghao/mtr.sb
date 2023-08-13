@@ -11,6 +11,8 @@ import (
 	"github.com/fsnotify/fsnotify"
 	"github.com/gin-gonic/gin"
 	"github.com/ip2location/ip2location-go/v9"
+	"github.com/ipinfo/go/v2/ipinfo"
+	"github.com/ipinfo/go/v2/ipinfo/cache"
 	jsoniter "github.com/json-iterator/go"
 	"github.com/json-iterator/go/extra"
 	"github.com/likexian/whois"
@@ -23,9 +25,11 @@ import (
 	"log"
 	"net"
 	"net/http"
+	"net/netip"
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 )
@@ -58,11 +62,13 @@ type IPGeo struct {
 }
 
 var (
-	serverList map[string]*Server
-	json       = jsoniter.ConfigCompatibleWithStandardLibrary
-	ipDB       *ip2location.DB
-	Version    = "N/A"
-	z          *zap.Logger
+	serverList    map[string]*Server
+	json          = jsoniter.ConfigCompatibleWithStandardLibrary
+	ipDB          *ip2location.DB
+	Version       = "N/A"
+	z             *zap.Logger
+	ipio          *ipinfo.Client
+	ipioWhiteList = []string{}
 )
 
 func init() {
@@ -86,26 +92,59 @@ func ipHandler(c *gin.Context) {
 
 	z.Info("ip", zap.String("ip", c.ClientIP()), zap.String("target", ip))
 
-	results, err := ipDB.Get_all(ip)
-	if err != nil {
-		c.AbortWithError(http.StatusInternalServerError, err)
-		return
+	inWhiteList := false
+	netIP, _ := netip.ParseAddr(ip)
+	for _, whiteList := range ipioWhiteList {
+		if strings.Contains(whiteList, "/") {
+			thisNet, _ := netip.ParsePrefix(whiteList)
+			if !thisNet.Contains(netIP) {
+				continue
+			}
+		} else {
+			if whiteList != ip {
+				continue
+			}
+		}
+		inWhiteList = true
+		break
 	}
+
 	asn := bgptools.Ip2Asn(ip)
 	r := ""
 	rdns, err := net.LookupAddr(ip)
 	if err == nil && len(rdns) > 0 {
 		r = rdns[0]
 	}
-	b, _ := json.Marshal(IPGeo{
-		Country:      results.Country_long,
-		CountryShort: results.Country_short,
-		Region:       results.Region,
-		City:         results.City,
-		Asn:          asn,
-		AsnName:      bgptools.Asn2Name(asn),
-		Rdns:         r,
-	})
+
+	ipgeo := IPGeo{
+		Asn:     asn,
+		AsnName: bgptools.Asn2Name(asn),
+		Rdns:    r,
+	}
+
+	if inWhiteList {
+		results, err := ipio.GetIPInfo(net.IP(ip))
+		if err != nil {
+			c.AbortWithError(http.StatusInternalServerError, err)
+			return
+		}
+		ipgeo.Country = results.CountryName
+		ipgeo.CountryShort = results.Country
+		ipgeo.Region = results.Region
+		ipgeo.City = results.City
+	} else {
+		results, err := ipDB.Get_all(ip)
+		if err != nil {
+			c.AbortWithError(http.StatusInternalServerError, err)
+			return
+		}
+		ipgeo.Country = results.Country_long
+		ipgeo.CountryShort = results.Country_short
+		ipgeo.Region = results.Region
+		ipgeo.City = results.City
+	}
+
+	b, _ := json.Marshal(ipgeo)
 	c.String(http.StatusOK, "%s", b)
 }
 
@@ -648,6 +687,7 @@ func main() {
 	viper.OnConfigChange(func(e fsnotify.Event) {
 		fmt.Println("Config file changed:", e.Name)
 		initServerList()
+		ipioWhiteList = viper.GetStringSlice("ipinfo_whitelist")
 	})
 	viper.WatchConfig()
 
@@ -673,6 +713,10 @@ func main() {
 	if err != nil {
 		log.Fatalf("fail to load ip2location db: %v", err)
 	}
+
+	// ipinfo
+	ipio = ipinfo.NewClient(nil, ipinfo.NewCache(cache.NewInMemory()), viper.GetString("ipinfo_token"))
+	ipioWhiteList = viper.GetStringSlice("ipinfo_whitelist")
 
 	store := ratelimit.InMemoryStore(&ratelimit.InMemoryOptions{
 		Rate:  time.Second * 10,
