@@ -1647,10 +1647,10 @@
   resolved "https://registry.yarnpkg.com/@leichtgewicht/ip-codec/-/ip-codec-2.0.4.tgz#b2ac626d6cb9c8718ab459166d4bb405b8ffa78b"
   integrity sha512-Hcv+nVC0kZnQ3tD9GVu5xSMR4VVYOteQIr/hwFPVEvPdlXqgGEuRjiheChHgdM+JyqdgNcmzZOX/tnl0JOiI7A==
 
-"@marsidev/react-turnstile@^0.2.1":
-  version "0.2.4"
-  resolved "https://registry.yarnpkg.com/@marsidev/react-turnstile/-/react-turnstile-0.2.4.tgz#959f763bc377d0b33a7ce237bc60d20c44d70773"
-  integrity sha512-wRONlWm46ERR2ME1gZ9JZdd0ImZRM6QVdFcep4MuCE6N5qdaCCgcsnZm4VrTJQZ8RQYUjIjw/3Do5Zgg+uMp2w==
+"@marsidev/react-turnstile@^0.3.0":
+  version "0.3.0"
+  resolved "https://registry.yarnpkg.com/@marsidev/react-turnstile/-/react-turnstile-0.3.0.tgz#ad9b968794c79faf21b35a325c2b19d15855acff"
+  integrity sha512-TSBOtQ4w+kDXVGQOpbTbkw7cuaRXxiQr6WNuPassvzEc1V+FNPYRCx2cRZ/0lSGtdClSUvsyG9prueeDQ6uhuw==
 
 "@nicolo-ribaudo/eslint-scope-5-internals@5.1.1-v1":
   version "5.1.1-v1"
