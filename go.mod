@@ -14,7 +14,7 @@ require (
 	github.com/praserx/ipconv v1.2.1
 	github.com/spf13/viper v1.16.0
 	go.uber.org/zap v1.25.0
-	google.golang.org/grpc v1.58.0
+	google.golang.org/grpc v1.58.1
 	google.golang.org/protobuf v1.31.0
 )
 
