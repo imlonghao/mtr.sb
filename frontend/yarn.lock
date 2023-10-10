@@ -2235,9 +2235,11 @@
   integrity sha512-HksnYH4Ljr4VQgEy2lTStbCKv/P590tmPe5HqOnv9Gprffgv5WXAY+Y5Gqniu0GGqeTCUdBnzC3QSrzPkBkAMA==
 
 "@types/node@>=13.7.0":
-  version "20.8.2"
-  resolved "https://registry.yarnpkg.com/@types/node/-/node-20.8.2.tgz#d76fb80d87d0d8abfe334fc6d292e83e5524efc4"
-  integrity sha512-Vvycsc9FQdwhxE3y3DzeIxuEJbWGDsnrxvMADzTDF/lcdR9/K+AQIeAghTQsHtotg/q0j3WEOYS/jQgSdWue3w==
+  version "20.8.4"
+  resolved "https://registry.yarnpkg.com/@types/node/-/node-20.8.4.tgz#0e9ebb2ff29d5c3302fc84477d066fa7c6b441aa"
+  integrity sha512-ZVPnqU58giiCjSxjVUESDtdPk4QR5WQhhINbc9UBrKLU68MX5BF6kbQzTrkwbolyr0X8ChBpXfavr5mZFKZQ5A==
+  dependencies:
+    undici-types "~5.25.1"
 
 "@types/node@^18.0.0":
   version "18.18.4"
@@ -9429,9 +9431,9 @@ ts-proto-descriptors@1.15.0:
     protobufjs "^7.2.4"
 
 ts-proto@^1.146.0:
-  version "1.160.0"
-  resolved "https://registry.yarnpkg.com/ts-proto/-/ts-proto-1.160.0.tgz#0ae62b7951c61476a28ce55ca3a964f5d8a0ff33"
-  integrity sha512-AUJQ0noLEkLew81MYmNPF/z8QDIBxAIJ4UKt9sH2AwdaywOTk1jh1NoluoCr3cGScpVh0GHWCB/UA4V0fOO8fg==
+  version "1.161.0"
+  resolved "https://registry.yarnpkg.com/ts-proto/-/ts-proto-1.161.0.tgz#19e446a6448554c7510c4a1e0465f82e369a982f"
+  integrity sha512-AU1SxJbPETTDdzkle5okqwfqQqHKXemc587A6Lh9hkOL1HJbgowi8xLLQXHlb9zJVygYz8J+4LBccuohYKha4A==
   dependencies:
     case-anything "^2.1.13"
     protobufjs "^7.2.4"
@@ -9537,6 +9539,11 @@ unbox-primitive@^1.0.2:
     has-bigints "^1.0.2"
     has-symbols "^1.0.3"
     which-boxed-primitive "^1.0.2"
+
+undici-types@~5.25.1:
+  version "5.25.3"
+  resolved "https://registry.yarnpkg.com/undici-types/-/undici-types-5.25.3.tgz#e044115914c85f0bcbb229f346ab739f064998c3"
+  integrity sha512-Ga1jfYwRn7+cP9v8auvEXN1rX3sWqlayd4HP7OKk4mZWylEmu3KzXDUGrQUN6Ol7qo1gPvB2e5gX6udnyEPgdA==
 
 unicode-canonical-property-names-ecmascript@^2.0.0:
   version "2.0.0"
