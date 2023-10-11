@@ -33,7 +33,7 @@ steps:
       - apk add git
       - printf "r%s.%s,latest" "$(git rev-list --count HEAD)" "$(git rev-parse --short=7 HEAD)" > .tags
   - name: build
-    image: golang:1.21.2
+    image: golang:1.21.3
     commands:
       - ./build.sh worker
     when:
