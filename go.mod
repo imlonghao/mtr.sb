@@ -7,7 +7,7 @@ require (
 	github.com/fsnotify/fsnotify v1.6.0
 	github.com/gin-gonic/gin v1.9.1
 	github.com/ip2location/ip2location-go/v9 v9.6.0
-	github.com/ipinfo/go/v2 v2.9.4
+	github.com/ipinfo/go/v2 v2.10.0
 	github.com/json-iterator/go v1.1.12
 	github.com/likexian/whois v1.15.1
 	github.com/meyskens/go-turnstile v0.0.0-20230622160222-89160e594ca1
