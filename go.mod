@@ -4,7 +4,7 @@ go 1.20
 
 require (
 	github.com/JGLTechnologies/gin-rate-limit v1.5.4
-	github.com/fsnotify/fsnotify v1.6.0
+	github.com/fsnotify/fsnotify v1.7.0
 	github.com/gin-gonic/gin v1.9.1
 	github.com/ip2location/ip2location-go/v9 v9.6.0
 	github.com/ipinfo/go/v2 v2.10.0
