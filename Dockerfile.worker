@@ -7,4 +7,4 @@ RUN chmod +x /tini
 EXPOSE 50051
 ENTRYPOINT ["/tini", "--"]
 CMD ["/app/worker"]
-ADD /workspace/imlonghao/mtr.sb/worker ./
+COPY /workspace/imlonghao/mtr.sb/worker ./
