@@ -3,7 +3,7 @@ WORKDIR /app
 ADD . .
 RUN ./build.sh server
 
-FROM node:20 AS frontend-builder
+FROM node:21 AS frontend-builder
 WORKDIR /app
 ADD . .
 RUN cd frontend && yarn && yarn build
