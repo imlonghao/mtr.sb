@@ -8,3 +8,4 @@ EXPOSE 50051
 ENTRYPOINT ["/tini", "--"]
 CMD ["/app/worker"]
 COPY ./worker ./
+RUN chmod +x /app/worker
