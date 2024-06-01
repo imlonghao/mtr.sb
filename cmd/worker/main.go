@@ -1,19 +1,74 @@
 package main
 
 import (
+	"crypto/ed25519"
+	"crypto/rand"
 	"crypto/tls"
 	"crypto/x509"
+	"crypto/x509/pkix"
+	"encoding/pem"
 	"git.esd.cc/imlonghao/mtr.sb/pkgs/worker"
 	"git.esd.cc/imlonghao/mtr.sb/proto"
 	"github.com/spf13/viper"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"log"
+	"math/big"
 	"net"
 	"os"
+	"time"
 )
 
 var Version = "N/A"
+
+func generateCertificate() (string, string) {
+	_, priv, err := ed25519.GenerateKey(rand.Reader)
+	serialNumberLimit := new(big.Int).Lsh(big.NewInt(1), 128)
+	serialNumber, err := rand.Int(rand.Reader, serialNumberLimit)
+	if err != nil {
+		log.Fatalf("Failed to generate serial number: %v", err)
+	}
+	template := x509.Certificate{
+		SerialNumber: serialNumber,
+		Subject: pkix.Name{
+			Organization: []string{"MTR.SB"},
+		},
+		NotBefore:             time.Now(),
+		NotAfter:              time.Now(),
+		KeyUsage:              x509.KeyUsageDigitalSignature,
+		ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
+		BasicConstraintsValid: true,
+	}
+	derBytes, err := x509.CreateCertificate(rand.Reader, &template, &template, priv.Public().(ed25519.PublicKey), priv)
+	if err != nil {
+		log.Fatalf("Failed to create certificate: %v", err)
+	}
+	certOut, err := os.CreateTemp("", "cert.pem")
+	if err != nil {
+		log.Fatalf("Failed to open cert.pem for writing: %v", err)
+	}
+	if err := pem.Encode(certOut, &pem.Block{Type: "CERTIFICATE", Bytes: derBytes}); err != nil {
+		log.Fatalf("Failed to write data to cert.pem: %v", err)
+	}
+	if err := certOut.Close(); err != nil {
+		log.Fatalf("Error closing cert.pem: %v", err)
+	}
+	keyOut, err := os.CreateTemp("", "key.pem")
+	if err != nil {
+		log.Fatalf("Failed to open key.pem for writing: %v", err)
+	}
+	privBytes, err := x509.MarshalPKCS8PrivateKey(priv)
+	if err != nil {
+		log.Fatalf("Unable to marshal private key: %v", err)
+	}
+	if err := pem.Encode(keyOut, &pem.Block{Type: "PRIVATE KEY", Bytes: privBytes}); err != nil {
+		log.Fatalf("Failed to write data to key.pem: %v", err)
+	}
+	if err := keyOut.Close(); err != nil {
+		log.Fatalf("Error closing key.pem: %v", err)
+	}
+	return certOut.Name(), keyOut.Name()
+}
 
 func main() {
 	viper.SetConfigName("worker")
@@ -24,7 +79,8 @@ func main() {
 	if err != nil {
 		log.Fatalf("fatal error config file: %w", err)
 	}
-	cert, err := tls.LoadX509KeyPair(viper.GetString("cert_path"), viper.GetString("key_path"))
+	crt, key := generateCertificate()
+	cert, err := tls.LoadX509KeyPair(crt, key)
 	if err != nil {
 		log.Fatalf("tls.LoadX509KeyPair err: %v", err)
 	}
