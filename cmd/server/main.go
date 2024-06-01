@@ -642,8 +642,9 @@ func initServerList() {
 		}
 	}
 	c := credentials.NewTLS(&tls.Config{
-		Certificates: []tls.Certificate{cert},
-		RootCAs:      certPool,
+		Certificates:       []tls.Certificate{cert},
+		RootCAs:            certPool,
+		InsecureSkipVerify: true,
 	})
 	nodes := viper.Get("nodes").([]map[string]interface{})
 	for _, node := range nodes {
