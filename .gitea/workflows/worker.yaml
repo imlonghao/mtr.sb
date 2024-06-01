@@ -31,6 +31,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
+      - name: Fix Docker Permission
+        uses: https://github.com/imlonghao/gitea-runner-docker-permission-fix@main
       - name: Download artifact
         uses: actions/download-artifact@v3
         with:
