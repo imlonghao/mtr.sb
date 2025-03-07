@@ -1,6 +1,8 @@
 module git.esd.cc/imlonghao/mtr.sb
 
-go 1.20
+go 1.21
+
+toolchain go1.24.1
 
 require (
 	github.com/JGLTechnologies/gin-rate-limit v1.5.4
@@ -15,7 +17,7 @@ require (
 	github.com/spf13/viper v1.19.0
 	go.uber.org/zap v1.26.0
 	google.golang.org/grpc v1.62.1
-	google.golang.org/protobuf v1.33.0
+	google.golang.org/protobuf v1.36.5
 )
 
 require (
