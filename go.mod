@@ -11,7 +11,7 @@ require (
 	github.com/json-iterator/go v1.1.12
 	github.com/likexian/whois v1.15.1
 	github.com/meyskens/go-turnstile v0.0.0-20230622160222-89160e594ca1
-	github.com/praserx/ipconv v1.2.1
+	github.com/praserx/ipconv v1.2.2
 	github.com/spf13/viper v1.19.0
 	go.uber.org/zap v1.26.0
 	google.golang.org/grpc v1.62.1
