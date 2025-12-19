@@ -9,7 +9,7 @@ ENV PATH="$PNPM_HOME:$PATH"
 RUN corepack enable
 WORKDIR /app
 ADD . .
-RUN cd frontend && pnpm run build
+RUN cd frontend && pnpm && run build
 
 FROM ubuntu
 WORKDIR /app
