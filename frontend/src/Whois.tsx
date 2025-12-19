@@ -1,7 +1,7 @@
-import React, {useEffect, useState} from "react";
-import {Button, Col, Form, Input, message, Row, Select} from "antd";
-import {useSearchParams} from "react-router-dom";
-import {Turnstile, TurnstileInstance} from "@marsidev/react-turnstile";
+import React, { useEffect, useState } from "react";
+import { Button, Col, Form, Input, message, Row, Select } from "antd";
+import { useSearchParams } from "react-router-dom";
+import { Turnstile, TurnstileInstance } from "@marsidev/react-turnstile";
 
 export default function Whois() {
   let [searchParams, setSearchParams] = useSearchParams();
@@ -13,7 +13,7 @@ export default function Whois() {
   const [messageApi, contextHolder] = message.useMessage();
   const [token, setToken] = React.useState("")
   const [isProcessing, setIsProcessing] = React.useState(false)
-  const ref : React.MutableRefObject<TurnstileInstance|undefined> = React.useRef()
+  const ref = React.useRef<TurnstileInstance>(undefined)
 
   useEffect(() => {
     if (!start || target === "" || token === "" || isProcessing) {
@@ -62,7 +62,7 @@ export default function Whois() {
 
   return <>
     {contextHolder}
-    <Turnstile ref={ref} siteKey='0x4AAAAAAAGeiq0TQZ_Hozlv' onSuccess={setToken} style={{display: "none"}}/>
+    <Turnstile ref={ref} siteKey='0x4AAAAAAAGeiq0TQZ_Hozlv' onSuccess={setToken} style={{ display: "none" }} />
     <h1>Whois</h1>
     <Form form={form}>
       <Row gutter={16}>
@@ -73,7 +73,7 @@ export default function Whois() {
                 return
               }
               submit_event()
-            }}/>
+            }} />
           </Form.Item>
         </Col>
         <Col xs={24} sm={8}>
@@ -115,14 +115,14 @@ export default function Whois() {
               setTimeout(() => {
                 setStart(false)
                 setIsProcessing(false)
-              }, 10*1000);
+              }, 10 * 1000);
             }} disabled={start || token === ""}>{start || token === "" ? "Please Wait..." : "Start"}</Button>
           </Form.Item>
         </Col>
       </Row>
     </Form>
-    <hr/>
-    <pre style={{whiteSpace: "pre-wrap"}}>
+    <hr />
+    <pre style={{ whiteSpace: "pre-wrap" }}>
       {data}
     </pre>
   </>
