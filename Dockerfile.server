@@ -3,7 +3,7 @@ WORKDIR /app
 ADD . .
 RUN ./build.sh server
 
-FROM node:21 AS frontend-builder
+FROM node:24 AS frontend-builder
 ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
 RUN corepack enable
