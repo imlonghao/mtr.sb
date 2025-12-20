@@ -1076,7 +1076,7 @@ func initServerList() {
 			Longitude: getParamFloat(node, "lon"),
 			Conn:      nil,
 		}
-		conn, err := grpc.Dial(n.Url, grpc.WithTransportCredentials(c))
+		conn, err := grpc.NewClient(n.Url, grpc.WithTransportCredentials(c))
 		if err != nil {
 			log.Fatalf("did not connect: %v", err)
 		}
