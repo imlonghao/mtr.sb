@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v6
       - name: Setup go
         uses: https://github.com/actions/setup-go@v4
         with:
@@ -30,7 +30,7 @@ jobs:
       image: catthehacker/ubuntu:act-22.04
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v6
       - name: Fix Docker Permission
         uses: https://github.com/imlonghao/gitea-runner-docker-permission-fix@main
       - name: Download artifact
