@@ -1,0 +1,11 @@
+FROM ubuntu
+WORKDIR /app
+RUN apt update && apt install -y --no-install-recommends iputils-ping traceroute mtr-tiny && rm -rf /var/lib/apt/lists/*
+ENV TINI_VERSION v0.19.0
+ADD https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini /tini
+RUN chmod +x /tini
+EXPOSE 50051
+ENTRYPOINT ["/tini", "--"]
+CMD ["/app/agent"]
+COPY ./agent ./
+RUN chmod +x /app/agent
