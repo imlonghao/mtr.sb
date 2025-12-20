@@ -18,7 +18,7 @@ jobs:
       - name: Build
         run: ./build.sh agent
       - name: Upload Artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v6
         with:
           name: agent
           path: dist/agent
@@ -34,7 +34,7 @@ jobs:
       - name: Fix Docker Permission
         uses: https://github.com/imlonghao/gitea-runner-docker-permission-fix@main
       - name: Download artifact
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v7
         with:
           name: agent
       - name: Login to Docker Hub
@@ -63,7 +63,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Download artifact
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v7
         with:
           name: agent
       - name: Setup go
