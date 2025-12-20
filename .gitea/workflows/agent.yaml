@@ -12,7 +12,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
       - name: Setup go
-        uses: https://github.com/actions/setup-go@v4
+        uses: https://github.com/actions/setup-go@v6
         with:
           go-version: ">=1.25.5"
       - name: Build
@@ -67,7 +67,7 @@ jobs:
         with:
           name: agent
       - name: Setup go
-        uses: https://github.com/actions/setup-go@v4
+        uses: https://github.com/actions/setup-go@v6
         with:
           go-version: ">=1.25.5"
       - name: Release
