@@ -10,7 +10,6 @@ import (
 
 	"git.esd.cc/imlonghao/mtr.sb/pkgs/worker"
 	"git.esd.cc/imlonghao/mtr.sb/proto"
-	"github.com/go-viper/encoding/hcl"
 	"github.com/gorilla/websocket"
 	"github.com/spf13/viper"
 	"go.uber.org/zap"
@@ -20,7 +19,6 @@ import (
 
 var (
 	Version = "N/A"
-	v       *viper.Viper
 	z       *zap.Logger
 	w       *worker.Worker
 )
@@ -221,27 +219,18 @@ func handleVersionTask(tsw *TaskStreamWriter) {
 
 func main() {
 	// Load configuration
-	codecRegistry := viper.NewCodecRegistry()
-	codec := hcl.Codec{}
-	codecRegistry.RegisterCodec("hcl", codec)
-	v = viper.NewWithOptions(
-		viper.WithCodecRegistry(codecRegistry),
-	)
-	v.SetConfigName("agent")
-	v.SetConfigType("hcl")
-	v.AddConfigPath("/etc/mtr.sb/")
-	v.AddConfigPath("./")
-	v.AddConfigPath("./cmd/agent/")
-	err := v.ReadInConfig()
-	if err != nil {
-		log.Fatalf("fatal error config file: %v", err)
-	}
+	viper.SetEnvPrefix("MTRSB")
+	viper.BindEnv("url")
+	viper.BindEnv("name")
+	viper.BindEnv("provider")
+	viper.AutomaticEnv()
 
 	// Initialize logger
 	cfg := zap.NewProductionConfig()
 	cfg.OutputPaths = []string{
 		"stdout",
 	}
+	var err error
 	z, err = cfg.Build()
 	if err != nil {
 		log.Fatalf("fatal error building logger: %v", err)
@@ -251,9 +240,19 @@ func main() {
 	// Initialize worker
 	w = &worker.Worker{V: Version}
 
-	serverURL := v.GetString("server_url")
-	agentName := v.GetString("agent_name")
-	agentProvider := v.GetString("provider")
+	serverURL := viper.GetString("url")
+	agentName := viper.GetString("name")
+	agentProvider := viper.GetString("provider")
+
+	if serverURL == "" {
+		log.Fatalf("server url is not set")
+	}
+	if agentName == "" {
+		log.Fatalf("agent name is not set")
+	}
+	if agentProvider == "" {
+		log.Fatalf("agent provider is not set")
+	}
 
 	z.Info("connecting to server",
 		zap.String("url", serverURL),
