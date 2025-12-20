@@ -5,22 +5,6 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
-	"git.esd.cc/imlonghao/mtr.sb/pkgs/bgptools"
-	"git.esd.cc/imlonghao/mtr.sb/proto"
-	"github.com/JGLTechnologies/gin-rate-limit"
-	"github.com/fsnotify/fsnotify"
-	"github.com/gin-gonic/gin"
-	"github.com/ip2location/ip2location-go/v9"
-	"github.com/ipinfo/go/v2/ipinfo"
-	"github.com/ipinfo/go/v2/ipinfo/cache"
-	jsoniter "github.com/json-iterator/go"
-	"github.com/json-iterator/go/extra"
-	"github.com/likexian/whois"
-	"github.com/meyskens/go-turnstile"
-	"github.com/spf13/viper"
-	"go.uber.org/zap"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials"
 	"io"
 	"log"
 	"net"
@@ -32,6 +16,27 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"git.esd.cc/imlonghao/mtr.sb/pkgs/bgptools"
+	"git.esd.cc/imlonghao/mtr.sb/proto"
+	ratelimit "github.com/JGLTechnologies/gin-rate-limit"
+	"github.com/fsnotify/fsnotify"
+	"github.com/gin-gonic/gin"
+	"github.com/go-viper/encoding/hcl"
+	"github.com/google/uuid"
+	"github.com/gorilla/websocket"
+	"github.com/ip2location/ip2location-go/v9"
+	"github.com/ipinfo/go/v2/ipinfo"
+	"github.com/ipinfo/go/v2/ipinfo/cache"
+	jsoniter "github.com/json-iterator/go"
+	"github.com/json-iterator/go/extra"
+	"github.com/likexian/whois"
+	"github.com/meyskens/go-turnstile"
+	"github.com/spf13/viper"
+	"go.uber.org/zap"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
+	protobuf "google.golang.org/protobuf/proto"
 )
 
 type Result struct {
@@ -49,6 +54,12 @@ type Server struct {
 	Longitude float64
 	Url       string                  `json:"-"`
 	Conn      proto.MtrSbWorkerClient `json:"-"`
+	// WebSocket related
+	IsWebSocket bool                                `json:"-"`
+	WsConn      *websocket.Conn                     `json:"-"`
+	WsLock      sync.Mutex                          `json:"-"`
+	TaskChans   map[string]chan *proto.TaskResponse `json:"-"`
+	TaskLock    sync.RWMutex                        `json:"-"`
 }
 
 type IPGeo struct {
@@ -63,12 +74,19 @@ type IPGeo struct {
 
 var (
 	serverList    map[string]*Server
+	serverListMux sync.RWMutex
 	json          = jsoniter.ConfigCompatibleWithStandardLibrary
 	ipDB          *ip2location.DB
 	Version       = "N/A"
 	z             *zap.Logger
 	ipio          *ipinfo.Client
 	ipioWhiteList = []string{}
+	wsUpgrader    = websocket.Upgrader{
+		CheckOrigin: func(r *http.Request) bool {
+			return true
+		},
+	}
+	v *viper.Viper
 )
 
 func init() {
@@ -79,8 +97,179 @@ func init() {
 func serverListHandler(c *gin.Context) {
 	z.Info("server", zap.String("ip", c.ClientIP()))
 
+	serverListMux.RLock()
+	defer serverListMux.RUnlock()
 	b, _ := json.Marshal(serverList)
 	c.String(http.StatusOK, "%s", b)
+}
+
+func agentRegisterHandler(c *gin.Context) {
+	clientIP := c.ClientIP()
+	z.Info("agent register", zap.String("ip", clientIP))
+
+	conn, err := wsUpgrader.Upgrade(c.Writer, c.Request, nil)
+	if err != nil {
+		z.Error("websocket upgrade failed", zap.Error(err))
+		return
+	}
+	defer conn.Close()
+
+	// Read registration message
+	_, message, err := conn.ReadMessage()
+	if err != nil {
+		z.Error("read registration message failed", zap.Error(err))
+		return
+	}
+
+	var regReq proto.AgentRegisterRequest
+	if err := protobuf.Unmarshal(message, &regReq); err != nil {
+		z.Error("unmarshal registration message failed", zap.Error(err))
+		return
+	}
+
+	agentName := regReq.Name
+	agentProvider := regReq.Provider
+
+	z.Info("agent registration",
+		zap.String("name", agentName),
+		zap.String("provider", agentProvider),
+		zap.String("ip", clientIP))
+
+	// Query location from IP
+	location := ""
+	country := ""
+	lat := 0.0
+	lon := 0.0
+
+	results, err := ipDB.Get_all(clientIP)
+	if err == nil {
+		country = results.Country_long
+		location = fmt.Sprintf("%s, %s", results.City, results.Region)
+		lat = float64(results.Latitude)
+		lon = float64(results.Longitude)
+	}
+
+	// Send registration response
+	regResp := &proto.AgentRegisterResponse{
+		Success:   true,
+		Message:   "Registration successful",
+		Country:   country,
+		Location:  location,
+		Latitude:  float32(lat),
+		Longitude: float32(lon),
+	}
+
+	respData, err := protobuf.Marshal(regResp)
+	if err != nil {
+		z.Error("marshal registration response failed", zap.Error(err))
+		return
+	}
+
+	if err := conn.WriteMessage(websocket.BinaryMessage, respData); err != nil {
+		z.Error("write registration response failed", zap.Error(err))
+		return
+	}
+
+	// Create server entry
+	server := &Server{
+		Name:        agentName,
+		Provider:    agentProvider,
+		Country:     country,
+		Location:    location,
+		Latitude:    lat,
+		Longitude:   lon,
+		IsWebSocket: true,
+		WsConn:      conn,
+		TaskChans:   make(map[string]chan *proto.TaskResponse),
+	}
+
+	// Add to server list
+	serverListMux.Lock()
+	serverList[agentName] = server
+	serverListMux.Unlock()
+
+	z.Info("agent registered", zap.String("name", agentName))
+
+	// Start handling messages
+	go handleAgentMessages(server, agentName)
+
+	// Keep connection alive with ping/pong
+	ticker := time.NewTicker(30 * time.Second)
+	defer ticker.Stop()
+
+	conn.SetPongHandler(func(string) error {
+		conn.SetReadDeadline(time.Now().Add(60 * time.Second))
+		return nil
+	})
+	conn.SetReadDeadline(time.Now().Add(60 * time.Second))
+
+	for {
+		select {
+		case <-ticker.C:
+			server.WsLock.Lock()
+			if err := conn.WriteMessage(websocket.PingMessage, nil); err != nil {
+				server.WsLock.Unlock()
+				z.Info("agent disconnected", zap.String("name", agentName))
+				goto cleanup
+			}
+			server.WsLock.Unlock()
+		}
+	}
+
+cleanup:
+	serverListMux.Lock()
+	delete(serverList, agentName)
+	serverListMux.Unlock()
+	z.Info("agent removed", zap.String("name", agentName))
+}
+
+func handleAgentMessages(server *Server, agentName string) {
+	for {
+		_, message, err := server.WsConn.ReadMessage()
+		if err != nil {
+			z.Error("read message from agent failed",
+				zap.String("agent", agentName),
+				zap.Error(err))
+			return
+		}
+
+		var taskResp proto.TaskResponse
+		if err := protobuf.Unmarshal(message, &taskResp); err != nil {
+			z.Error("unmarshal task response failed",
+				zap.String("agent", agentName),
+				zap.Error(err))
+			continue
+		}
+
+		// Send response to waiting channel
+		server.TaskLock.RLock()
+		if ch, ok := server.TaskChans[taskResp.TaskId]; ok {
+			select {
+			case ch <- &taskResp:
+			default:
+				z.Warn("task response channel full",
+					zap.String("agent", agentName),
+					zap.String("task_id", taskResp.TaskId))
+			}
+		}
+		server.TaskLock.RUnlock()
+	}
+}
+
+func sendTaskToAgent(server *Server, taskReq *proto.TaskRequest) error {
+	server.WsLock.Lock()
+	defer server.WsLock.Unlock()
+
+	data, err := protobuf.Marshal(taskReq)
+	if err != nil {
+		return fmt.Errorf("marshal task request failed: %w", err)
+	}
+
+	if err := server.WsConn.WriteMessage(websocket.BinaryMessage, data); err != nil {
+		return fmt.Errorf("write task request failed: %w", err)
+	}
+
+	return nil
 }
 
 func ipHandler(c *gin.Context) {
@@ -171,28 +360,91 @@ func versionHandler(c *gin.Context) {
 	log.Printf("%s", a)
 	go func() { clientChan <- string(a) }()
 
+	serverListMux.RLock()
 	for hostname, server := range serverList {
 		wg.Add(1)
-		go func(hostname string, connection proto.MtrSbWorkerClient) {
-			defer wg.Done()
-			var responses []byte
-			r, err := connection.Version(ctx, &proto.VersionRequest{})
-			if err != nil {
-				log.Printf("could not greet: %v", err)
-				responses, _ = json.Marshal(Result{
-					Node: hostname,
-					Data: "OFFLINE",
-				})
-			} else {
-				responses, _ = json.Marshal(Result{
-					Node: hostname,
-					Data: r.GetVersion(),
-				})
-			}
-			log.Printf("%s", responses)
-			clientChan <- string(responses)
-		}(hostname, server.Conn)
+		if server.IsWebSocket {
+			go func(hostname string, srv *Server) {
+				defer wg.Done()
+				taskID := uuid.New().String()
+
+				respChan := make(chan *proto.TaskResponse, 1)
+				srv.TaskLock.Lock()
+				srv.TaskChans[taskID] = respChan
+				srv.TaskLock.Unlock()
+
+				defer func() {
+					srv.TaskLock.Lock()
+					delete(srv.TaskChans, taskID)
+					srv.TaskLock.Unlock()
+					close(respChan)
+				}()
+
+				taskReq := &proto.TaskRequest{
+					TaskId:   taskID,
+					TaskType: proto.TaskType_TASK_VERSION,
+					Request: &proto.TaskRequest_Version{
+						Version: &proto.VersionRequest{},
+					},
+				}
+
+				if err := sendTaskToAgent(srv, taskReq); err != nil {
+					log.Printf("send task to agent %s failed: %v", hostname, err)
+					responses, _ := json.Marshal(Result{
+						Node: hostname,
+						Data: "OFFLINE",
+					})
+					clientChan <- string(responses)
+					return
+				}
+
+				select {
+				case <-ctx.Done():
+					responses, _ := json.Marshal(Result{
+						Node: hostname,
+						Data: "TIMEOUT",
+					})
+					clientChan <- string(responses)
+				case taskResp := <-respChan:
+					if taskResp == nil {
+						responses, _ := json.Marshal(Result{
+							Node: hostname,
+							Data: "OFFLINE",
+						})
+						clientChan <- string(responses)
+					} else if versionResp := taskResp.GetVersion(); versionResp != nil {
+						responses, _ := json.Marshal(Result{
+							Node: hostname,
+							Data: versionResp.GetVersion(),
+						})
+						log.Printf("%s", responses)
+						clientChan <- string(responses)
+					}
+				}
+			}(hostname, server)
+		} else {
+			go func(hostname string, connection proto.MtrSbWorkerClient) {
+				defer wg.Done()
+				var responses []byte
+				r, err := connection.Version(ctx, &proto.VersionRequest{})
+				if err != nil {
+					log.Printf("could not greet: %v", err)
+					responses, _ = json.Marshal(Result{
+						Node: hostname,
+						Data: "OFFLINE",
+					})
+				} else {
+					responses, _ = json.Marshal(Result{
+						Node: hostname,
+						Data: r.GetVersion(),
+					})
+				}
+				log.Printf("%s", responses)
+				clientChan <- string(responses)
+			}(hostname, server.Conn)
+		}
 	}
+	serverListMux.RUnlock()
 
 	go func() {
 		wg.Wait()
@@ -265,40 +517,99 @@ func pingHandler(c *gin.Context) {
 
 	var wg sync.WaitGroup
 
+	serverListMux.RLock()
 	for hostname, server := range serverList {
 		wg.Add(1)
-		go func(hostname string, connection proto.MtrSbWorkerClient) {
-			defer wg.Done()
-			r, err := connection.Ping(ctx, &proto.PingRequest{
-				Host:     target,
-				Protocol: proto.Protocol(protocol),
-			})
-			if err != nil {
-				log.Printf("could not greet: %v", err)
-				return
-			}
-			for {
-				pingResponse, err := r.Recv()
-				if err == io.EOF {
-					log.Printf("EOF!")
-					break
+		if server.IsWebSocket {
+			go func(hostname string, srv *Server) {
+				defer wg.Done()
+				taskID := uuid.New().String()
+
+				// Create response channel
+				respChan := make(chan *proto.TaskResponse, 100)
+				srv.TaskLock.Lock()
+				srv.TaskChans[taskID] = respChan
+				srv.TaskLock.Unlock()
+
+				defer func() {
+					srv.TaskLock.Lock()
+					delete(srv.TaskChans, taskID)
+					srv.TaskLock.Unlock()
+					close(respChan)
+				}()
+
+				// Send task
+				taskReq := &proto.TaskRequest{
+					TaskId:   taskID,
+					TaskType: proto.TaskType_TASK_PING,
+					Request: &proto.TaskRequest_Ping{
+						Ping: &proto.PingRequest{
+							Host:     target,
+							Protocol: proto.Protocol(protocol),
+						},
+					},
 				}
+
+				if err := sendTaskToAgent(srv, taskReq); err != nil {
+					log.Printf("send task to agent %s failed: %v", hostname, err)
+					return
+				}
+
+				// Receive responses
+				for {
+					select {
+					case <-ctx.Done():
+						return
+					case taskResp := <-respChan:
+						if taskResp == nil {
+							return
+						}
+						if pingResp := taskResp.GetPing(); pingResp != nil {
+							a, _ := json.Marshal(Result{
+								Node: hostname,
+								Data: pingResp.Response,
+							})
+							log.Printf("%s", a)
+							clientChan <- string(a)
+						}
+					}
+				}
+			}(hostname, server)
+		} else {
+			go func(hostname string, connection proto.MtrSbWorkerClient) {
+				defer wg.Done()
+				r, err := connection.Ping(ctx, &proto.PingRequest{
+					Host:     target,
+					Protocol: proto.Protocol(protocol),
+				})
 				if err != nil {
 					log.Printf("could not greet: %v", err)
-					break
+					return
 				}
-				if pingResponse == nil {
-					continue
+				for {
+					pingResponse, err := r.Recv()
+					if err == io.EOF {
+						log.Printf("EOF!")
+						break
+					}
+					if err != nil {
+						log.Printf("could not greet: %v", err)
+						break
+					}
+					if pingResponse == nil {
+						continue
+					}
+					a, _ := json.Marshal(Result{
+						Node: hostname,
+						Data: pingResponse.Response,
+					})
+					log.Printf("%s", a)
+					clientChan <- string(a)
 				}
-				a, _ := json.Marshal(Result{
-					Node: hostname,
-					Data: pingResponse.Response,
-				})
-				log.Printf("%s", a)
-				clientChan <- string(a)
-			}
-		}(hostname, server.Conn)
+			}(hostname, server.Conn)
+		}
 	}
+	serverListMux.RUnlock()
 
 	go func() {
 		wg.Wait()
@@ -385,40 +696,93 @@ func tracerouteHandler(c *gin.Context) {
 
 	var wg sync.WaitGroup
 
+	serverListMux.RLock()
 	for hostname, server := range serverList {
 		if hostname != node {
 			continue
 		}
 		wg.Add(1)
-		go func(connection proto.MtrSbWorkerClient) {
-			defer wg.Done()
-			r, err := connection.Traceroute(ctx, &proto.TracerouteRequest{
-				Host:     target,
-				Protocol: proto.Protocol(protocol),
-			})
-			if err != nil {
-				log.Printf("could not greet: %v", err)
-				return
-			}
-			for {
-				response, err := r.Recv()
-				if err == io.EOF {
-					log.Printf("EOF!")
-					break
+		if server.IsWebSocket {
+			go func(hostname string, srv *Server) {
+				defer wg.Done()
+				taskID := uuid.New().String()
+
+				respChan := make(chan *proto.TaskResponse, 100)
+				srv.TaskLock.Lock()
+				srv.TaskChans[taskID] = respChan
+				srv.TaskLock.Unlock()
+
+				defer func() {
+					srv.TaskLock.Lock()
+					delete(srv.TaskChans, taskID)
+					srv.TaskLock.Unlock()
+					close(respChan)
+				}()
+
+				taskReq := &proto.TaskRequest{
+					TaskId:   taskID,
+					TaskType: proto.TaskType_TASK_TRACEROUTE,
+					Request: &proto.TaskRequest_Traceroute{
+						Traceroute: &proto.TracerouteRequest{
+							Host:     target,
+							Protocol: proto.Protocol(protocol),
+						},
+					},
 				}
+
+				if err := sendTaskToAgent(srv, taskReq); err != nil {
+					log.Printf("send task to agent %s failed: %v", hostname, err)
+					return
+				}
+
+				for {
+					select {
+					case <-ctx.Done():
+						return
+					case taskResp := <-respChan:
+						if taskResp == nil {
+							return
+						}
+						if traceResp := taskResp.GetTraceroute(); traceResp != nil {
+							a, _ := json.Marshal(traceResp.Response)
+							log.Printf("%s", a)
+							clientChan <- string(a)
+						}
+					}
+				}
+			}(hostname, server)
+		} else {
+			go func(connection proto.MtrSbWorkerClient) {
+				defer wg.Done()
+				r, err := connection.Traceroute(ctx, &proto.TracerouteRequest{
+					Host:     target,
+					Protocol: proto.Protocol(protocol),
+				})
 				if err != nil {
 					log.Printf("could not greet: %v", err)
-					break
+					return
 				}
-				if response == nil {
-					continue
+				for {
+					response, err := r.Recv()
+					if err == io.EOF {
+						log.Printf("EOF!")
+						break
+					}
+					if err != nil {
+						log.Printf("could not greet: %v", err)
+						break
+					}
+					if response == nil {
+						continue
+					}
+					a, _ := json.Marshal(response.Response)
+					log.Printf("%s", a)
+					clientChan <- string(a)
 				}
-				a, _ := json.Marshal(response.Response)
-				log.Printf("%s", a)
-				clientChan <- string(a)
-			}
-		}(server.Conn)
+			}(server.Conn)
+		}
 	}
+	serverListMux.RUnlock()
 
 	go func() {
 		wg.Wait()
@@ -505,40 +869,93 @@ func mtrHandler(c *gin.Context) {
 
 	var wg sync.WaitGroup
 
+	serverListMux.RLock()
 	for hostname, server := range serverList {
 		if hostname != node {
 			continue
 		}
 		wg.Add(1)
-		go func(connection proto.MtrSbWorkerClient) {
-			defer wg.Done()
-			r, err := connection.Mtr(ctx, &proto.MtrRequest{
-				Host:     target,
-				Protocol: proto.Protocol(protocol),
-			})
-			if err != nil {
-				log.Printf("could not greet: %v", err)
-				return
-			}
-			for {
-				response, err := r.Recv()
-				if err == io.EOF {
-					log.Printf("EOF!")
-					break
+		if server.IsWebSocket {
+			go func(hostname string, srv *Server) {
+				defer wg.Done()
+				taskID := uuid.New().String()
+
+				respChan := make(chan *proto.TaskResponse, 100)
+				srv.TaskLock.Lock()
+				srv.TaskChans[taskID] = respChan
+				srv.TaskLock.Unlock()
+
+				defer func() {
+					srv.TaskLock.Lock()
+					delete(srv.TaskChans, taskID)
+					srv.TaskLock.Unlock()
+					close(respChan)
+				}()
+
+				taskReq := &proto.TaskRequest{
+					TaskId:   taskID,
+					TaskType: proto.TaskType_TASK_MTR,
+					Request: &proto.TaskRequest_Mtr{
+						Mtr: &proto.MtrRequest{
+							Host:     target,
+							Protocol: proto.Protocol(protocol),
+						},
+					},
 				}
+
+				if err := sendTaskToAgent(srv, taskReq); err != nil {
+					log.Printf("send task to agent %s failed: %v", hostname, err)
+					return
+				}
+
+				for {
+					select {
+					case <-ctx.Done():
+						return
+					case taskResp := <-respChan:
+						if taskResp == nil {
+							return
+						}
+						if mtrResp := taskResp.GetMtr(); mtrResp != nil {
+							a, _ := json.Marshal(mtrResp)
+							log.Printf("%s", a)
+							clientChan <- string(a)
+						}
+					}
+				}
+			}(hostname, server)
+		} else {
+			go func(connection proto.MtrSbWorkerClient) {
+				defer wg.Done()
+				r, err := connection.Mtr(ctx, &proto.MtrRequest{
+					Host:     target,
+					Protocol: proto.Protocol(protocol),
+				})
 				if err != nil {
 					log.Printf("could not greet: %v", err)
-					break
+					return
 				}
-				if response == nil {
-					continue
+				for {
+					response, err := r.Recv()
+					if err == io.EOF {
+						log.Printf("EOF!")
+						break
+					}
+					if err != nil {
+						log.Printf("could not greet: %v", err)
+						break
+					}
+					if response == nil {
+						continue
+					}
+					a, _ := json.Marshal(response)
+					log.Printf("%s", a)
+					clientChan <- string(a)
 				}
-				a, _ := json.Marshal(response)
-				log.Printf("%s", a)
-				clientChan <- string(a)
-			}
-		}(server.Conn)
+			}(server.Conn)
+		}
 	}
+	serverListMux.RUnlock()
 
 	go func() {
 		wg.Wait()
@@ -561,7 +978,7 @@ func whoisHandler(c *gin.Context) {
 	server := c.Query("s")
 	token := c.Query("token")
 
-	ts := turnstile.New(viper.GetString("turnstile_secret"))
+	ts := turnstile.New(v.GetString("turnstile_secret"))
 	resp, err := ts.Verify(token, c.ClientIP())
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"ok": false, "data": err.Error()})
@@ -582,7 +999,7 @@ func whoisHandler(c *gin.Context) {
 	}
 
 	whoisServerTrusted := false
-	for _, trustedWhoisServer := range viper.GetStringSlice("trusted_whois_server") {
+	for _, trustedWhoisServer := range v.GetStringSlice("trusted_whois_server") {
 		if server == trustedWhoisServer {
 			whoisServerTrusted = true
 			break
@@ -624,7 +1041,7 @@ func getParamFloat(m map[string]interface{}, k string) float64 {
 
 func initServerList() {
 	serverList = make(map[string]*Server)
-	cert, err := tls.LoadX509KeyPair(viper.GetString("cert_path"), viper.GetString("key_path"))
+	cert, err := tls.LoadX509KeyPair(v.GetString("cert_path"), v.GetString("key_path"))
 	if err != nil {
 		log.Fatalf("tls.LoadX509KeyPair err: %v", err)
 	}
@@ -632,7 +1049,7 @@ func initServerList() {
 	if err != nil {
 		log.Fatalf("x509.SystemCertPool err: %v", err)
 	}
-	for _, caPath := range viper.GetStringSlice("worker_ca_path") {
+	for _, caPath := range v.GetStringSlice("worker_ca_path") {
 		ca, err := os.ReadFile(caPath)
 		if err != nil {
 			log.Fatalf("ioutil.ReadFile err: %v", err)
@@ -646,7 +1063,7 @@ func initServerList() {
 		RootCAs:            certPool,
 		InsecureSkipVerify: true,
 	})
-	nodes := viper.Get("nodes").([]map[string]interface{})
+	nodes := v.Get("nodes").([]map[string]any)
 	for _, node := range nodes {
 		n := Server{
 			Name:      getParam(node, "name"),
@@ -677,27 +1094,30 @@ func catchAllPath(c *gin.Context) {
 }
 
 func main() {
-	viper.SetConfigName("server")
-	viper.SetConfigType("hcl")
-	viper.AddConfigPath("/etc/mtr.sb/")
-	viper.AddConfigPath("./")
-	err := viper.ReadInConfig()
+	codecRegistry := viper.NewCodecRegistry()
+	codec := hcl.Codec{}
+	codecRegistry.RegisterCodec("hcl", codec)
+	v = viper.NewWithOptions(
+		viper.WithCodecRegistry(codecRegistry),
+	)
+	v.SetConfigName("server")
+	v.SetConfigType("hcl")
+	v.AddConfigPath("/etc/mtr.sb/")
+	v.AddConfigPath("./")
+	err := v.ReadInConfig()
 	if err != nil {
-		log.Fatalf("fatal error config file: %w", err)
+		log.Fatalf("fatal error config file: %s", err)
 	}
-	viper.OnConfigChange(func(e fsnotify.Event) {
+	v.OnConfigChange(func(e fsnotify.Event) {
 		fmt.Println("Config file changed:", e.Name)
 		initServerList()
-		ipioWhiteList = viper.GetStringSlice("ipinfo_whitelist")
+		ipioWhiteList = v.GetStringSlice("ipinfo_whitelist")
 		fmt.Println("ipioWhiteList", ipioWhiteList)
 	})
-	viper.WatchConfig()
+	v.WatchConfig()
 
 	// logger
 	cfg := zap.NewProductionConfig()
-	cfg.OutputPaths = []string{
-		"/var/log/mtr.sb/server.log",
-	}
 	z, err = cfg.Build()
 	if err != nil {
 		log.Fatalf("fatal error building logger, %v", err)
@@ -711,14 +1131,14 @@ func main() {
 	bgptools.AsnNameInitNetwork(Version)
 
 	// ip2location
-	ipDB, err = ip2location.OpenDB(viper.GetString("ip2location_db_path"))
+	ipDB, err = ip2location.OpenDB(v.GetString("ip2location_db_path"))
 	if err != nil {
 		log.Fatalf("fail to load ip2location db: %v", err)
 	}
 
 	// ipinfo
-	ipio = ipinfo.NewClient(nil, ipinfo.NewCache(cache.NewInMemory()), viper.GetString("ipinfo_token"))
-	ipioWhiteList = viper.GetStringSlice("ipinfo_whitelist")
+	ipio = ipinfo.NewClient(nil, ipinfo.NewCache(cache.NewInMemory()), v.GetString("ipinfo_token"))
+	ipioWhiteList = v.GetStringSlice("ipinfo_whitelist")
 	fmt.Println("ipioWhiteList", ipioWhiteList)
 
 	store := ratelimit.InMemoryStore(&ratelimit.InMemoryOptions{
@@ -746,6 +1166,9 @@ func main() {
 	api.GET("/servers", serverListHandler)
 	api.GET("/ip", ipHandler)
 	api.GET("/version", versionHandler)
+
+	// WebSocket endpoint for agent registration
+	api.GET("/agent/register", agentRegisterHandler)
 
 	router.NoRoute(catchAllPath, gin.WrapH(http.FileServer(gin.Dir("build", false))))
 	router.Run(":8085")

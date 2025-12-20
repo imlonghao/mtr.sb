@@ -117,3 +117,48 @@ message MtrPingLine {
 message MtrDnsLine {
   string hostname = 1;
 }
+
+// WebSocket Agent related messages
+
+enum TaskType {
+  TASK_VERSION = 0;
+  TASK_PING = 1;
+  TASK_MTR = 2;
+  TASK_TRACEROUTE = 3;
+}
+
+message AgentRegisterRequest {
+  string name = 1;
+  string provider = 2;
+}
+
+message AgentRegisterResponse {
+  bool success = 1;
+  string message = 2;
+  string country = 3;
+  string location = 4;
+  float latitude = 5;
+  float longitude = 6;
+}
+
+message TaskRequest {
+  string task_id = 1;
+  TaskType task_type = 2;
+  oneof request {
+    PingRequest ping = 3;
+    MtrRequest mtr = 4;
+    TracerouteRequest traceroute = 5;
+    VersionRequest version = 6;
+  }
+}
+
+message TaskResponse {
+  string task_id = 1;
+  TaskType task_type = 2;
+  oneof response {
+    PingResponse ping = 3;
+    MtrResponse mtr = 4;
+    TracerouteResponse traceroute = 5;
+    VersionResponse version = 6;
+  }
+}
