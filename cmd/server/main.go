@@ -45,15 +45,13 @@ type Result struct {
 }
 
 type Server struct {
-	Name      string
-	Provider  string
-	Country   string
-	Location  string
-	AffLink   string
-	Latitude  float64
-	Longitude float64
-	Url       string                  `json:"-"`
-	Conn      proto.MtrSbWorkerClient `json:"-"`
+	Name     string
+	Provider string
+	Country  string
+	Location string
+	AffLink  string
+	Url      string                  `json:"-"`
+	Conn     proto.MtrSbWorkerClient `json:"-"`
 	// WebSocket related
 	IsWebSocket bool                                `json:"-"`
 	WsConn      *websocket.Conn                     `json:"-"`
@@ -138,25 +136,19 @@ func agentRegisterHandler(c *gin.Context) {
 	// Query location from IP
 	location := ""
 	country := ""
-	lat := 0.0
-	lon := 0.0
 
 	results, err := ipDB.Get_all(clientIP)
 	if err == nil {
 		country = results.Country_short
 		location = fmt.Sprintf("%s, %s", results.City, results.Region)
-		lat = float64(results.Latitude)
-		lon = float64(results.Longitude)
 	}
 
 	// Send registration response
 	regResp := &proto.AgentRegisterResponse{
-		Success:   true,
-		Message:   "Registration successful",
-		Country:   country,
-		Location:  location,
-		Latitude:  float32(lat),
-		Longitude: float32(lon),
+		Success:  true,
+		Message:  "Registration successful",
+		Country:  country,
+		Location: location,
 	}
 
 	respData, err := protobuf.Marshal(regResp)
@@ -176,8 +168,6 @@ func agentRegisterHandler(c *gin.Context) {
 		Provider:    agentProvider,
 		Country:     country,
 		Location:    location,
-		Latitude:    lat,
-		Longitude:   lon,
 		IsWebSocket: true,
 		WsConn:      conn,
 		TaskChans:   make(map[string]chan *proto.TaskResponse),
@@ -1066,15 +1056,13 @@ func initServerList() {
 	nodes := v.Get("nodes").([]map[string]any)
 	for _, node := range nodes {
 		n := Server{
-			Name:      getParam(node, "name"),
-			Provider:  getParam(node, "provider"),
-			Country:   getParam(node, "country"),
-			Location:  getParam(node, "location"),
-			AffLink:   getParam(node, "aff"),
-			Url:       getParam(node, "url"),
-			Latitude:  getParamFloat(node, "lat"),
-			Longitude: getParamFloat(node, "lon"),
-			Conn:      nil,
+			Name:     getParam(node, "name"),
+			Provider: getParam(node, "provider"),
+			Country:  getParam(node, "country"),
+			Location: getParam(node, "location"),
+			AffLink:  getParam(node, "aff"),
+			Url:      getParam(node, "url"),
+			Conn:     nil,
 		}
 		conn, err := grpc.NewClient(n.Url, grpc.WithTransportCredentials(c))
 		if err != nil {
