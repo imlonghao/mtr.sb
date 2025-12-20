@@ -14,7 +14,7 @@ jobs:
       - name: Setup go
         uses: https://github.com/actions/setup-go@v4
         with:
-          go-version: ">=1.21"
+          go-version: ">=1.25.5"
       - name: Build
         run: ./build.sh agent
       - name: Upload Artifact
@@ -69,7 +69,7 @@ jobs:
       - name: Setup go
         uses: https://github.com/actions/setup-go@v4
         with:
-          go-version: ">=1.21"
+          go-version: ">=1.25.5"
       - name: Release
         uses: https://gitea.com/actions/release-action@main
         with:
