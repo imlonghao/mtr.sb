@@ -143,7 +143,7 @@ func agentRegisterHandler(c *gin.Context) {
 
 	results, err := ipDB.Get_all(clientIP)
 	if err == nil {
-		country = results.Country_long
+		country = results.Country_short
 		location = fmt.Sprintf("%s, %s", results.City, results.Region)
 		lat = float64(results.Latitude)
 		lon = float64(results.Longitude)
