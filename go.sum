@@ -78,6 +78,8 @@ github.com/likexian/gokit v0.25.15 h1:QjospM1eXhdMMHwZRpMKKAHY/Wig9wgcREmLtf9Nsl
 github.com/likexian/gokit v0.25.15/go.mod h1:S2QisdsxLEHWeD/XI0QMVeggp+jbxYqUxMvSBil7MRg=
 github.com/likexian/whois v1.15.6 h1:hizngFHJTNQDlhwhU+FEGyPGxy8bRnf25gHDNrSB4Ag=
 github.com/likexian/whois v1.15.6/go.mod h1:vx3kt3sZ4mx4XFgpaNp3GXQCZQIzAoyrUAkRtJwoM2I=
+github.com/likexian/whois v1.15.7 h1:sajjDhi2bVD71AHJhjV7jLYxN92H4AWhTwxM8hmj7c0=
+github.com/likexian/whois v1.15.7/go.mod h1:kdPQtYb+7SQVftBEbCblDadUkycN7Mg1k1/Li/rwvmc=
 github.com/mattn/go-isatty v0.0.20 h1:xfD0iDuEKnDkl03q4limB+vH+GxLEtL/jb4xVJSWWEY=
 github.com/mattn/go-isatty v0.0.20/go.mod h1:W+V8PltTTMOvKvAeJH7IuucS94S2C6jfK/D7dTCTo3Y=
 github.com/meyskens/go-turnstile v0.0.0-20230622160222-89160e594ca1 h1:lGjDY7OC1VfMpuVUN+b59vPPepbPx/eJQXGqpM2pCdw=

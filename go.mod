@@ -12,7 +12,7 @@ require (
 	github.com/ip2location/ip2location-go/v9 v9.8.0
 	github.com/ipinfo/go/v2 v2.12.0
 	github.com/json-iterator/go v1.1.12
-	github.com/likexian/whois v1.15.6
+	github.com/likexian/whois v1.15.7
 	github.com/meyskens/go-turnstile v0.0.0-20230622160222-89160e594ca1
 	github.com/praserx/ipconv v1.2.2
 	github.com/spf13/viper v1.21.0
