@@ -1,4 +1,4 @@
-FROM golang:1.25.5 AS backend-builder
+FROM golang:1.25.6 AS backend-builder
 WORKDIR /app
 ADD . .
 RUN ./build.sh server
